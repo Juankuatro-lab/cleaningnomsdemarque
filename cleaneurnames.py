@@ -1,16 +1,4 @@
-# Script pour détecter la taille d'écran
-    st.markdown("""
-    <script>
-    function updateScreenWidth() {
-        const width = window.innerWidth;
-        // Envoie la largeur à Streamlit (simulation)
-        console.log('Screen width:', width);
-    }
-    
-    window.addEventListener('resize', updateScreenWidth);
-    updateScreenWidth();
-    </script>
-    """, unsafe_allow_html=True)#!/usr/bin/env python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 Script de nettoyage des mots-clés de marque pour SEMRush/Ahrefs
@@ -24,71 +12,6 @@ import io
 from difflib import SequenceMatcher
 from typing import List, Set, Tuple
 import base64
-
-# Configuration pour le responsive
-st.markdown("""
-<style>
-    /* Responsive layout */
-    @media (max-width: 768px) {
-        .stColumns > div {
-            min-width: 100% !important;
-        }
-        .metric-container {
-            margin-bottom: 1rem;
-        }
-    }
-    
-    /* Style pour les boutons copier */
-    .copy-button {
-        background: linear-gradient(90deg, #4CAF50, #45a049);
-        border: none;
-        color: white;
-        padding: 8px 16px;
-        text-align: center;
-        text-decoration: none;
-        display: inline-block;
-        font-size: 14px;
-        margin: 4px 2px;
-        cursor: pointer;
-        border-radius: 4px;
-        transition: all 0.3s;
-    }
-    
-    .copy-button:hover {
-        background: linear-gradient(90deg, #45a049, #4CAF50);
-        transform: translateY(-2px);
-    }
-    
-    /* Amélioration des zones de texte */
-    .stTextArea > div > div > textarea {
-        font-family: 'Courier New', monospace;
-        font-size: 14px;
-    }
-    
-    /* Responsive metrics */
-    .metric-row {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 1rem;
-    }
-    
-    .metric-item {
-        flex: 1;
-        min-width: 200px;
-    }
-    
-    /* Mobile-first approach */
-    .main-container {
-        padding: 1rem;
-    }
-    
-    @media (min-width: 768px) {
-        .main-container {
-            padding: 2rem;
-        }
-    }
-</style>
-""", unsafe_allow_html=True)
 
 class BrandKeywordCleaner:
     def __init__(self, similarity_threshold: float = 0.8):
@@ -219,7 +142,7 @@ class BrandKeywordCleaner:
                     break
             
             if keyword_column is None:
-                st.error(f"⚠️ Colonne 'keyword' non trouvée dans {uploaded_file.name}")
+                st.error(f"Colonne 'keyword' non trouvée dans {uploaded_file.name}")
                 st.write(f"Colonnes disponibles: {list(df.columns)}")
                 return keywords
             
@@ -230,7 +153,7 @@ class BrandKeywordCleaner:
             st.success(f"{len(keywords)} mots-clés chargés depuis {uploaded_file.name}")
             
         except Exception as e:
-            st.error(f"❌ Erreur lors du chargement de {uploaded_file.name}: {str(e)}")
+            st.error(f"Erreur lors du chargement de {uploaded_file.name}: {str(e)}")
             
         return keywords
     
@@ -355,20 +278,6 @@ def copy_to_clipboard_js(text_to_copy: str, button_id: str) -> str:
     }}
     </script>
     """
-def create_download_link(content: str, filename: str, text: str) -> str:
-    """
-    Crée un lien de téléchargement pour du contenu texte.
-    
-    Args:
-        content: Contenu à télécharger
-        filename: Nom du fichier
-        text: Texte du lien
-        
-    Returns:
-        HTML du lien de téléchargement
-    """
-    b64 = base64.b64encode(content.encode()).decode()
-    return f'<a href="data:text/plain;base64,{b64}" download="{filename}">{text}</a>'
 
 def main():
     """Interface Streamlit principale."""
@@ -380,6 +289,59 @@ def main():
         layout="wide",
         initial_sidebar_state="expanded"
     )
+    
+    # Configuration CSS pour le responsive
+    st.markdown("""
+    <style>
+        /* Responsive layout */
+        @media (max-width: 768px) {
+            .stColumns > div {
+                min-width: 100% !important;
+            }
+            .metric-container {
+                margin-bottom: 1rem;
+            }
+        }
+        
+        /* Style pour les boutons copier */
+        .copy-button {
+            background: linear-gradient(90deg, #4CAF50, #45a049);
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 14px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+        
+        .copy-button:hover {
+            background: linear-gradient(90deg, #45a049, #4CAF50);
+            transform: translateY(-2px);
+        }
+        
+        /* Amélioration des zones de texte */
+        .stTextArea > div > div > textarea {
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+        
+        /* Mobile-first approach */
+        .main-container {
+            padding: 1rem;
+        }
+        
+        @media (min-width: 768px) {
+            .main-container {
+                padding: 2rem;
+            }
+        }
+    </style>
+    """, unsafe_allow_html=True)
     
     # En-tête
     st.title("Nettoyeur de mots-clés de marque")
@@ -429,7 +391,7 @@ def main():
         )
         
         if uploaded_files:
-            st.success(f"✅ {len(uploaded_files)} fichier(s) uploadé(s)")
+            st.success(f"{len(uploaded_files)} fichier(s) uploadé(s)")
             with st.expander("Fichiers uploadés"):
                 for file in uploaded_files:
                     st.write(f"• {file.name} ({file.size:,} bytes)")
@@ -473,27 +435,18 @@ def main():
                 st.warning("Aucun terme de marque détecté")
                 return
             
-            # Affichage des statistiques avec layout responsive
+            # Affichage des statistiques
             st.header("Résultats de l'analyse")
             
-            # Métriques avec layout adaptatif
-            if st.session_state.get('screen_width', 1200) < 768:
-                # Mobile : métriques empilées
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
                 st.metric("Mots-clés analysés", f"{stats['total_keywords']:,}")
+            with col2:
                 st.metric("Termes détectés", f"{stats['brand_terms_found']:,}")
+            with col3:
                 st.metric("Termes uniques", f"{stats['unique_brand_terms']:,}")
+            with col4:
                 st.metric("% de marque", f"{stats['brand_percentage']:.1f}%")
-            else:
-                # Desktop : métriques en ligne
-                col1, col2, col3, col4 = st.columns(4)
-                with col1:
-                    st.metric("Mots-clés analysés", f"{stats['total_keywords']:,}")
-                with col2:
-                    st.metric("Termes détectés", f"{stats['brand_terms_found']:,}")
-                with col3:
-                    st.metric("Termes uniques", f"{stats['unique_brand_terms']:,}")
-                with col4:
-                    st.metric("% de marque", f"{stats['brand_percentage']:.1f}%")
             
             # Génération des résultats
             regex = cleaner.generate_regex(terms)
