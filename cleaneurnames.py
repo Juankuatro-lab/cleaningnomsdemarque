@@ -1,4 +1,16 @@
-#!/usr/bin/env python3
+# Script pour détecter la taille d'écran
+    st.markdown("""
+    <script>
+    function updateScreenWidth() {
+        const width = window.innerWidth;
+        // Envoie la largeur à Streamlit (simulation)
+        console.log('Screen width:', width);
+    }
+    
+    window.addEventListener('resize', updateScreenWidth);
+    updateScreenWidth();
+    </script>
+    """, unsafe_allow_html=True)#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 Script de nettoyage des mots-clés de marque pour SEMRush/Ahrefs
@@ -12,6 +24,71 @@ import io
 from difflib import SequenceMatcher
 from typing import List, Set, Tuple
 import base64
+
+# Configuration pour le responsive
+st.markdown("""
+<style>
+    /* Responsive layout */
+    @media (max-width: 768px) {
+        .stColumns > div {
+            min-width: 100% !important;
+        }
+        .metric-container {
+            margin-bottom: 1rem;
+        }
+    }
+    
+    /* Style pour les boutons copier */
+    .copy-button {
+        background: linear-gradient(90deg, #4CAF50, #45a049);
+        border: none;
+        color: white;
+        padding: 8px 16px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 14px;
+        margin: 4px 2px;
+        cursor: pointer;
+        border-radius: 4px;
+        transition: all 0.3s;
+    }
+    
+    .copy-button:hover {
+        background: linear-gradient(90deg, #45a049, #4CAF50);
+        transform: translateY(-2px);
+    }
+    
+    /* Amélioration des zones de texte */
+    .stTextArea > div > div > textarea {
+        font-family: 'Courier New', monospace;
+        font-size: 14px;
+    }
+    
+    /* Responsive metrics */
+    .metric-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+    
+    .metric-item {
+        flex: 1;
+        min-width: 200px;
+    }
+    
+    /* Mobile-first approach */
+    .main-container {
+        padding: 1rem;
+    }
+    
+    @media (min-width: 768px) {
+        .main-container {
+            padding: 2rem;
+        }
+    }
+</style>
+""", unsafe_allow_html=True)
 
 class BrandKeywordCleaner:
     def __init__(self, similarity_threshold: float = 0.8):
@@ -235,6 +312,49 @@ class BrandKeywordCleaner:
         """
         return ', '.join(terms)
 
+def copy_to_clipboard_js(text_to_copy: str, button_id: str) -> str:
+    """
+    Génère le JavaScript pour copier du texte dans le presse-papiers.
+    
+    Args:
+        text_to_copy: Texte à copier
+        button_id: ID unique du bouton
+        
+    Returns:
+        HTML avec JavaScript pour la fonction de copie
+    """
+    # Échappement des caractères spéciaux pour JavaScript
+    escaped_text = text_to_copy.replace('\\', '\\\\').replace("'", "\\'").replace('\n', '\\n')
+    
+    return f"""
+    <button class="copy-button" onclick="copyToClipboard_{button_id}()">
+        Copier
+    </button>
+    <script>
+    function copyToClipboard_{button_id}() {{
+        const text = `{escaped_text}`;
+        navigator.clipboard.writeText(text).then(function() {{
+            const button = event.target;
+            const originalText = button.innerHTML;
+            button.innerHTML = 'Copié !';
+            button.style.background = 'linear-gradient(90deg, #28a745, #20c997)';
+            setTimeout(function() {{
+                button.innerHTML = originalText;
+                button.style.background = 'linear-gradient(90deg, #4CAF50, #45a049)';
+            }}, 2000);
+        }}).catch(function(err) {{
+            console.error('Erreur lors de la copie: ', err);
+            const button = event.target;
+            button.innerHTML = 'Erreur';
+            button.style.background = 'linear-gradient(90deg, #dc3545, #c82333)';
+            setTimeout(function() {{
+                button.innerHTML = 'Copier';
+                button.style.background = 'linear-gradient(90deg, #4CAF50, #45a049)';
+            }}, 2000);
+        }});
+    }}
+    </script>
+    """
 def create_download_link(content: str, filename: str, text: str) -> str:
     """
     Crée un lien de téléchargement pour du contenu texte.
@@ -353,18 +473,27 @@ def main():
                 st.warning("Aucun terme de marque détecté")
                 return
             
-            # Affichage des statistiques
+            # Affichage des statistiques avec layout responsive
             st.header("Résultats de l'analyse")
             
-            col1, col2, col3, col4 = st.columns(4)
-            with col1:
+            # Métriques avec layout adaptatif
+            if st.session_state.get('screen_width', 1200) < 768:
+                # Mobile : métriques empilées
                 st.metric("Mots-clés analysés", f"{stats['total_keywords']:,}")
-            with col2:
                 st.metric("Termes détectés", f"{stats['brand_terms_found']:,}")
-            with col3:
                 st.metric("Termes uniques", f"{stats['unique_brand_terms']:,}")
-            with col4:
                 st.metric("% de marque", f"{stats['brand_percentage']:.1f}%")
+            else:
+                # Desktop : métriques en ligne
+                col1, col2, col3, col4 = st.columns(4)
+                with col1:
+                    st.metric("Mots-clés analysés", f"{stats['total_keywords']:,}")
+                with col2:
+                    st.metric("Termes détectés", f"{stats['brand_terms_found']:,}")
+                with col3:
+                    st.metric("Termes uniques", f"{stats['unique_brand_terms']:,}")
+                with col4:
+                    st.metric("% de marque", f"{stats['brand_percentage']:.1f}%")
             
             # Génération des résultats
             regex = cleaner.generate_regex(terms)
@@ -373,18 +502,26 @@ def main():
             # Affichage des résultats
             st.header("Résultats générés")
             
-            # Regex
+            # Regex avec bouton copier
             st.subheader("Regex générée")
-            st.code(regex, language="regex")
+            col_regex_text, col_regex_btn = st.columns([4, 1])
+            with col_regex_text:
+                st.code(regex, language="regex")
+            with col_regex_btn:
+                st.markdown(copy_to_clipboard_js(regex, "regex"), unsafe_allow_html=True)
             
-            # Liste des termes
+            # Liste des termes avec bouton copier
             st.subheader("Liste des termes (séparés par virgules)")
-            st.text_area(
-                "Termes:",
-                value=comma_list,
-                height=100,
-                key="comma_list_display"
-            )
+            col_list_text, col_list_btn = st.columns([4, 1])
+            with col_list_text:
+                st.text_area(
+                    "Termes:",
+                    value=comma_list,
+                    height=100,
+                    key="comma_list_display"
+                )
+            with col_list_btn:
+                st.markdown(copy_to_clipboard_js(comma_list, "list"), unsafe_allow_html=True)
             
             # Détail des termes
             with st.expander("Détail des termes détectés", expanded=False):
