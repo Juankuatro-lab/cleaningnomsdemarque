@@ -66,30 +66,29 @@ class BrandKeywordCleaner:
     
     def is_brand_term(self, keyword: str, brand_names: Set[str]) -> bool:
         """
-        Vérifie si un mot-clé contient un terme de marque.
+        Vérifie si un mot-clé EST un terme de marque (mot complet uniquement).
         
         Args:
             keyword: Mot-clé à analyser
             brand_names: Set des noms de marque
             
         Returns:
-            True si le mot-clé contient un terme de marque
+            True si le mot-clé EST un terme de marque
         """
-        keyword_lower = keyword.lower()
+        keyword_clean = re.sub(r'[^\w\s]', ' ', keyword.lower()).strip()
         
-        # Recherche exacte
-        for brand in brand_names:
-            if brand.lower() in keyword_lower:
-                return True
-        
-        # Recherche avec similarité
-        words = re.findall(r'\b\w+\b', keyword_lower)
-        for word in words:
+        # Si le keyword est un seul mot, on compare directement
+        if len(keyword_clean.split()) == 1:
             for brand in brand_names:
-                similarity = self.calculate_similarity(word, brand)
+                # Recherche exacte (insensible à la casse)
+                if keyword_clean == brand.lower():
+                    return True
+                
+                # Recherche avec similarité pour les fautes d'orthographe
+                similarity = self.calculate_similarity(keyword_clean, brand.lower())
                 if similarity >= self.similarity_threshold:
                     return True
-                    
+        
         return False
     
     def load_dataframe(self, uploaded_file) -> List[str]:
@@ -107,14 +106,38 @@ class BrandKeywordCleaner:
         try:
             # Détection de l'extension
             if uploaded_file.name.lower().endswith('.csv'):
-                df = pd.read_csv(uploaded_file, encoding='utf-8')
+                # Tentative de lecture avec différents encodages
+                encodings = ['utf-8', 'utf-16', 'latin-1', 'cp1252', 'iso-8859-1']
+                df = None
+                
+                for encoding in encodings:
+                    try:
+                        # Reset du pointeur de fichier
+                        uploaded_file.seek(0)
+                        df = pd.read_csv(uploaded_file, encoding=encoding, sep=None, engine='python')
+                        break
+                    except (UnicodeDecodeError, UnicodeError):
+                        continue
+                    except Exception:
+                        # Si ce n'est pas un problème d'encodage, on essaie quand même les autres
+                        continue
+                
+                if df is None:
+                    # Dernière tentative avec détection automatique
+                    uploaded_file.seek(0)
+                    df = pd.read_csv(uploaded_file, encoding='utf-8', errors='ignore', sep=None, engine='python')
             else:
                 df = pd.read_excel(uploaded_file)
+            
+            # Vérification que le DataFrame n'est pas vide
+            if df is None or df.empty:
+                st.error(f"⚠️ Fichier vide ou illisible: {uploaded_file.name}")
+                return keywords
             
             # Recherche de la colonne keyword
             keyword_column = None
             for col in df.columns:
-                if 'keyword' in col.lower():
+                if 'keyword' in str(col).lower():
                     keyword_column = col
                     break
             
@@ -125,7 +148,7 @@ class BrandKeywordCleaner:
             
             # Extraction des mots-clés
             keywords = df[keyword_column].dropna().astype(str).tolist()
-            keywords = [kw.strip() for kw in keywords if kw.strip()]
+            keywords = [kw.strip() for kw in keywords if kw.strip() and kw != 'nan']
             
             st.success(f"✅ {len(keywords)} mots-clés chargés depuis {uploaded_file.name}")
             
