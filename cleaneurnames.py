@@ -131,7 +131,7 @@ class BrandKeywordCleaner:
             
             # Vérification que le DataFrame n'est pas vide
             if df is None or df.empty:
-                st.error(f"⚠️ Fichier vide ou illisible: {uploaded_file.name}")
+                st.error(f"Fichier vide ou illisible: {uploaded_file.name}")
                 return keywords
             
             # Recherche de la colonne keyword
@@ -150,7 +150,7 @@ class BrandKeywordCleaner:
             keywords = df[keyword_column].dropna().astype(str).tolist()
             keywords = [kw.strip() for kw in keywords if kw.strip() and kw != 'nan']
             
-            st.success(f"✅ {len(keywords)} mots-clés chargés depuis {uploaded_file.name}")
+            st.success(f"{len(keywords)} mots-clés chargés depuis {uploaded_file.name}")
             
         except Exception as e:
             st.error(f"❌ Erreur lors du chargement de {uploaded_file.name}: {str(e)}")
@@ -168,11 +168,11 @@ class BrandKeywordCleaner:
         Returns:
             Tuple (liste des termes de marque, statistiques)
         """
-        with st.spinner("🔍 Extraction des noms de marque depuis les domaines..."):
+        with st.spinner("Extraction des noms de marque depuis les domaines..."):
             brand_names = self.extract_brand_names(domains)
             st.write(f"**Noms de marque détectés:** {', '.join(sorted(brand_names))}")
         
-        with st.spinner("📁 Chargement des fichiers..."):
+        with st.spinner("Chargement des fichiers..."):
             all_keywords = []
             
             for uploaded_file in uploaded_files:
@@ -180,9 +180,9 @@ class BrandKeywordCleaner:
                 all_keywords.extend(keywords)
         
         total_keywords = len(all_keywords)
-        st.write(f"**📊 Total:** {total_keywords:,} mots-clés à analyser")
+        st.write(f"**Total:** {total_keywords:,} mots-clés à analyser")
         
-        with st.spinner("🔎 Détection des termes de marque..."):
+        with st.spinner("Détection des termes de marque..."):
             progress_bar = st.progress(0)
             brand_terms = []
             
@@ -262,7 +262,7 @@ def main():
     )
     
     # En-tête
-    st.title("🔍 Nettoyeur de mots-clés de marque")
+    st.title("Nettoyeur de mots-clés de marque")
     st.markdown("**Extrait automatiquement les termes de marque de vos données SEMRush/Ahrefs**")
     
     # Sidebar pour la configuration
@@ -310,25 +310,25 @@ def main():
         
         if uploaded_files:
             st.success(f"✅ {len(uploaded_files)} fichier(s) uploadé(s)")
-            with st.expander("📋 Fichiers uploadés"):
+            with st.expander("Fichiers uploadés"):
                 for file in uploaded_files:
                     st.write(f"• {file.name} ({file.size:,} bytes)")
     
     with col2:
-        st.header("🎯 Lancement")
+        st.header("Lancement")
         
         # Validation des entrées
         domains_valid = bool(domains_input.strip())
         files_valid = bool(uploaded_files)
         
         if not domains_valid:
-            st.warning("⚠️ Veuillez saisir au moins un domaine")
+            st.warning("Veuillez saisir au moins un domaine")
         if not files_valid:
-            st.warning("⚠️ Veuillez uploader au moins un fichier")
+            st.warning("Veuillez uploader au moins un fichier")
         
         # Bouton d'analyse
         analyze_btn = st.button(
-            "🚀 Analyser les fichiers",
+            "Analyser les fichiers",
             disabled=not (domains_valid and files_valid),
             use_container_width=True
         )
@@ -350,11 +350,11 @@ def main():
             terms, stats = cleaner.process_files(uploaded_files, domains)
             
             if not terms:
-                st.warning("⚠️ Aucun terme de marque détecté")
+                st.warning("Aucun terme de marque détecté")
                 return
             
             # Affichage des statistiques
-            st.header("📊 Résultats de l'analyse")
+            st.header("Résultats de l'analyse")
             
             col1, col2, col3, col4 = st.columns(4)
             with col1:
@@ -371,43 +371,39 @@ def main():
             comma_list = cleaner.generate_comma_list(terms)
             
             # Affichage des résultats
-            st.header("🎯 Résultats générés")
+            st.header("Résultats générés")
             
             # Regex
-            st.subheader("🔍 Regex générée")
+            st.subheader("Regex générée")
             st.code(regex, language="regex")
-            if st.button("📋 Copier la regex", key="copy_regex"):
-                st.success("Regex copiée ! (simulé)")
             
             # Liste des termes
-            st.subheader("🏷️ Liste des termes (séparés par virgules)")
+            st.subheader("Liste des termes (séparés par virgules)")
             st.text_area(
                 "Termes:",
                 value=comma_list,
                 height=100,
-                key="comma_list"
+                key="comma_list_display"
             )
-            if st.button("📋 Copier la liste", key="copy_list"):
-                st.success("Liste copiée ! (simulé)")
             
             # Détail des termes
-            with st.expander("📋 Détail des termes détectés", expanded=False):
+            with st.expander("Détail des termes détectés", expanded=False):
                 detail_list = '\n'.join([f"{i+1:4d}. {term}" for i, term in enumerate(terms)])
                 st.text_area(
                     "Tous les termes:",
                     value=detail_list,
                     height=300,
-                    key="detail_list"
+                    key="detail_list_display"
                 )
             
             # Téléchargement des résultats
-            st.subheader("💾 Téléchargement")
+            st.subheader("Téléchargement")
             
             # Préparation du contenu complet
             results_content = f"""RÉSULTATS DE L'ANALYSE DES MOTS-CLÉS DE MARQUE
 {'=' * 80}
 
-📊 STATISTIQUES
+STATISTIQUES
 {'-' * 40}
 Mots-clés analysés: {stats['total_keywords']:,}
 Termes de marque détectés: {stats['brand_terms_found']:,}
@@ -416,31 +412,31 @@ Pourcentage de marque: {stats['brand_percentage']:.1f}%
 Noms de marque utilisés: {', '.join(sorted(stats['brand_names']))}
 Seuil de similarité: {similarity}%
 
-🔍 REGEX GÉNÉRÉE
+REGEX GÉNÉRÉE
 {'-' * 40}
 {regex}
 
-🏷️ LISTE DES TERMES (séparés par virgules)
+LISTE DES TERMES (séparés par virgules)
 {'-' * 40}
 {comma_list}
 
-📋 DÉTAIL DES TERMES DÉTECTÉS
+DÉTAIL DES TERMES DÉTECTÉS
 {'-' * 40}
 {detail_list}
 """
             
             st.download_button(
-                label="⬇️ Télécharger les résultats complets",
+                label="Télécharger les résultats complets",
                 data=results_content,
                 file_name="brand_keywords_results.txt",
                 mime="text/plain",
                 use_container_width=True
             )
             
-            st.success("✅ Analyse terminée avec succès !")
+            st.success("Analyse terminée avec succès !")
             
         except Exception as e:
-            st.error(f"❌ Erreur lors de l'analyse: {str(e)}")
+            st.error(f"Erreur lors de l'analyse: {str(e)}")
 
 if __name__ == "__main__":
     main()
